@@ -16,12 +16,14 @@ PRE_STONE = '○'
 # フォント指定
 FONT_FAMILY = ''
 FONT_SIZE = 30
+
 # セルの前景色
 FOREGROUND_COLOR = 'black'
 # セルの背景色
 BACKGROUND_COLOR = 'green'
 # 先手後手
 Ply = ['先手', '後手']
+
 # CPU戦での制限時間
 TIME_LIMIT = 30
 # カウントダウンの刻み
@@ -52,9 +54,9 @@ class BoardUI(ttk.Frame):
     update_Ng_position_list(self)
     restart(self)
     hint(self)
-    indicate(self)
-    indicate_click(self,x,y)
-    indicate_cancel(self)
+    on_click_indicate_button(self)
+    on_click_in_indicate(self,x,y)
+    indicate_mode_cancel(self)
     indicate_Kyoen(self)
     put_stone(self, x, y)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,12 +128,12 @@ class BoardUI(ttk.Frame):
             widget.destroy()
 
         # 情報表示ラベルの表示内容
-        self.display_var = StringVar()
-        self.display_var.set('モードを選んでください')
+        self.main_display_var = StringVar()
+        self.main_display_var.set('モードを選んでください')
 
         # 情報表示ラベル
         info_label = ttk.Label(
-            self, textvariable=self.display_var
+            self, textvariable=self.main_display_var
         )
 
         info_label.grid(
@@ -189,33 +191,33 @@ class BoardUI(ttk.Frame):
             widget.destroy()
 
         # 情報表示ラベルの表示内容
-        self.display_var = StringVar()
-        self.display_var.set('点を打ちたい場所をクリックしてください。')
+        self.main_display_var = StringVar()
+        self.main_display_var.set('点を打ちたい場所をクリックしてください。')
 
-        self.score_var = StringVar()
+        self.sub_main_display_var = StringVar()
         if gamemode_num == 1:
-            self.score_var.set('score : %d   '%len(self.prot_list))
+            self.sub_main_display_var.set('score : %d   '%len(self.prot_list))
         elif gamemode_num == 2:
-            self.score_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
+            self.sub_main_display_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
         elif gamemode_num == 3:
             #初期タイマー
             self.start_time = time()
-            self.score_var.set('%d'%TIME_LIMIT)
+            self.sub_main_display_var.set('%d'%TIME_LIMIT)
             self.after_ID = self.after(INTERVAL, self.update_time)
 
 
         # 情報表示ラベル
         info_label = ttk.Label(
-            self, textvariable=self.display_var
+            self, textvariable=self.main_display_var
         )
         info_label.grid(
             row=0, column=0, columnspan=ROW_NUM, sticky=(N, S, E, W)
         )
 
-        score_label = ttk.Label(
-            self, textvariable=self.score_var
+        sub_label = ttk.Label(
+            self, textvariable=self.sub_main_display_var
         )
-        score_label.grid(
+        sub_label.grid(
             row=0, column=0, columnspan=ROW_NUM, sticky=(E)
         )
 
@@ -257,7 +259,7 @@ class BoardUI(ttk.Frame):
             button = ttk.Button(self,
                                 text = '共円指摘',
                                 style='Sub.TButton',
-                                command= lambda : self.indicate()
+                                command= lambda : self.on_click_indicate_button()
                                 )
             button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
                         sticky=(N, S, E, W), padx=0,pady=0)
@@ -307,19 +309,19 @@ class BoardUI(ttk.Frame):
                 return
 
             if (idx_x, idx_y) in self.prot_list:
-                self.display_var.set('この位置には点を打つことができません。')
+                self.main_display_var.set('この位置には点を打つことができません。')
                 return
 
             try:
                 self.put_stone(idx_x, idx_y)
                 self.Ng_list.append((idx_x,idx_y))
                 self.prot_list.append((idx_x,idx_y))
-                self.score_var.set('score : %d   '%len(self.prot_list))
+                self.sub_main_display_var.set('score : %d   '%len(self.prot_list))
                 # 石の配置を画面に反映
                 self.update_board()
 
                 if self.Ng_position[idx_x][idx_y]:
-                    self.display_var.set('共円発生!')
+                    self.main_display_var.set('共円発生!')
                     Kyoen_list = find_Kyoen(idx_x,idx_y,self.prot_list)
                     self.disp_Ng_list()
                     self.make_Kyoen(Kyoen_list)
@@ -344,14 +346,14 @@ class BoardUI(ttk.Frame):
                 return
 
             if (idx_x, idx_y) in self.prot_list:
-                self.display_var.set('この位置には点を打つことができません。')
+                self.main_display_var.set('この位置には点を打つことができません。')
                 return
 
             try:
                 self.put_stone(idx_x, idx_y)
                 self.Ng_list.append((idx_x,idx_y))
                 self.prot_list.append((idx_x,idx_y))
-                self.score_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
+                self.sub_main_display_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
                 # 石の配置を画面に反映
                 self.update_board()      
                 self.update_Ng_position_list()
@@ -368,7 +370,7 @@ class BoardUI(ttk.Frame):
                 return
 
             if (idx_x, idx_y) in self.prot_list:
-                self.display_var.set('この位置には点を打つことができません。')
+                self.main_display_var.set('この位置には点を打つことができません。')
                 return
 
             try:
@@ -386,7 +388,7 @@ class BoardUI(ttk.Frame):
                 self.cpu_random()
 
                 self.start_time = time()
-                self.score_var.set('%d'%TIME_LIMIT)
+                self.sub_main_display_var.set('%d'%TIME_LIMIT)
                 self.after_ID = self.after(INTERVAL, self.update_time)
 
             except Exception:
@@ -408,7 +410,7 @@ class BoardUI(ttk.Frame):
             self.gameover()
             return
         elapsed_time_str = '{:.1f}'.format(elapsed_time)
-        self.score_var.set('%s'%elapsed_time_str)
+        self.sub_main_display_var.set('%s'%elapsed_time_str)
         return
 
     def gameover(self):
@@ -416,7 +418,7 @@ class BoardUI(ttk.Frame):
         時間切れゲームオーバー
         '''
         self.after_cancel(self.after_ID)
-        self.score_var.set('Game over')
+        self.sub_main_display_var.set('時間切れ! CPUの勝利!')
         for x in range(ROW_NUM):
             for y in range(ROW_NUM):
                 button = ttk.Button(self,
@@ -424,13 +426,8 @@ class BoardUI(ttk.Frame):
                                     style='Main.TButton'
                                     )
                 button.grid(row=x+1, column=y, sticky=(N, S, E, W), padx=0,pady=0)
-        button = ttk.Button(self,
-                            text = '答え',
-                            style='Sub.TButton',
-                            command= lambda : self.hint()
-                            )
-        button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
-                    sticky=(N, S, E, W), padx=0,pady=0)
+        
+        self.disp_Ng_list()
         return
 
     def clear_check(self):
@@ -439,7 +436,7 @@ class BoardUI(ttk.Frame):
         '''
         if len(set(self.Ng_list)) == ROW_NUM**2 :
             self.End_flag = True
-            self.display_var.set('Clear!!!')
+            self.main_display_var.set('Clear!!!')
             for x in range(ROW_NUM):
                 for y in range(ROW_NUM):
                     if (x, y) not in self.Ng_list:
@@ -467,7 +464,7 @@ class BoardUI(ttk.Frame):
                 continue
             if are_these_Kyoen(search_list):
                 self.after_cancel(self.after_ID)
-                self.display_var.set('共円発生!')
+                self.main_display_var.set('共円発生!')
                 self.disp_Ng_list()
                 self.make_Kyoen(search_list)
                 self.End_flag = True            
@@ -486,13 +483,13 @@ class BoardUI(ttk.Frame):
         self.put_stone(x, y)
         self.Ng_list.append((x,y))
         self.prot_list.append((x,y))
-        self.score_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
+        self.sub_main_display_var.set('%s'%Ply[(len(self.prot_list)+1)%2])
         # 石の配置を画面に反映
         self.update_board()   
         self.update_Ng_position_list()
         return
 
-    def make_Kyoen(self, Kyoen_list):
+    def make_Kyoen(self, Kyoen_list:list):
         '''
         共円となる点を赤く表示
         '''
@@ -561,7 +558,7 @@ class BoardUI(ttk.Frame):
             self.after_cancel(self.after_ID)
         self.clear_position_list()
         self.clear_disp_list()
-        #self.display_var.set('石を置きたい場所をクリックしてください。')
+        #self.main_display_var.set('石を置きたい場所をクリックしてください。')
         self.set_up()
         return
 
@@ -606,7 +603,7 @@ class BoardUI(ttk.Frame):
                 button.grid(row=x+1, column=y, sticky=(N, S, E, W), padx=0,pady=0)
         return
 
-    def indicate(self):
+    def on_click_indicate_button(self):
         '''
         共円を指摘できるモードへ移行
         '''
@@ -617,7 +614,7 @@ class BoardUI(ttk.Frame):
         button = ttk.Button(self,
                             text = '指摘取り消し',
                             style='Sub.TButton',
-                            command= lambda : self.indicate_cancel()
+                            command= lambda : self.indicate_mode_cancel()
                             )
         button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
                     sticky=(N, S, E, W), padx=0,pady=0)
@@ -635,42 +632,44 @@ class BoardUI(ttk.Frame):
                     button = ttk.Button(self,
                                         textvariable=self.disp_list[x][y],
                                         style='Main.TButton',
-                                        command=lambda idx_x=x, idx_y=y: self.indicate_click(
+                                        command=lambda idx_x=x, idx_y=y: self.on_click_in_indicate(
                                             idx_x, idx_y)
                                         )
                     button.grid(row=x+1, column=y, sticky=(N, S, E, W), padx=0,pady=0)
         return
     
-    def indicate_click(self,x,y):
+    def on_click_in_indicate(self,x,y):
         '''
-        共円指摘時のクリック判定
+        共円指摘モードにおけるクリック判定
         '''
         if self.End_flag:
             return
         if (x,y) not in self.prot_list:
             return
 
+        # self.stackは共円候補点
         if (x,y) in self.stack: #選択キャンセル
             index = self.stack.index((x,y))
             self.stack.pop(index)
             button = ttk.Button(self,
                                 textvariable=self.disp_list[x][y],
                                 style='Main.TButton',
-                                command=lambda idx_x=x, idx_y=y: self.indicate_click(
+                                command=lambda idx_x=x, idx_y=y: self.on_click_in_indicate(
                                     idx_x, idx_y)
                                 )
             button.grid(row=x+1, column=y, sticky=(N, S, E, W), padx=0,pady=0)
 
-        else:
+        else: # 候補点に追加
             self.stack.append((x,y))
             button = ttk.Button(self,
                                 textvariable=self.disp_list[x][y],
                                 style='Green_Yellow.TButton',
-                                command=lambda idx_x=x, idx_y=y: self.indicate_click(
+                                command=lambda idx_x=x, idx_y=y: self.on_click_in_indicate(
                                     idx_x, idx_y)
                                 )
             button.grid(row=x+1, column=y, sticky=(N, S, E, W), padx=0,pady=0)
 
+        # 4点選択時に共円指摘可能にする
         if len(self.stack) == 4:
             button = ttk.Button(self,
                                 text = '共円！',
@@ -679,17 +678,18 @@ class BoardUI(ttk.Frame):
                                 )
             button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
                         sticky=(N, S, E, W), padx=0,pady=0)
-        else:
+        else: # 4点選択時以外は指摘モード取り消しボタン
             button = ttk.Button(self,
                                 text = '指摘取り消し',
                                 style='Sub.TButton',
-                                command= lambda : self.indicate_cancel()
+                                command= lambda : self.indicate_mode_cancel()
                                 )
             button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
                         sticky=(N, S, E, W), padx=0,pady=0)
         return
 
-    def indicate_cancel(self):
+
+    def indicate_mode_cancel(self):
         '''
         共円指摘モード取り消し
         '''
@@ -697,7 +697,7 @@ class BoardUI(ttk.Frame):
         button = ttk.Button(self,
                             text = '共円指摘',
                             style='Sub.TButton',
-                            command= lambda : self.indicate()
+                            command= lambda : self.on_click_indicate_button()
                             )
         button.grid(row=ROW_NUM+1, column=0, columnspan = ROW_NUM//2,rowspan = 1 , 
                     sticky=(N, S, E, W), padx=0,pady=0)
@@ -705,6 +705,7 @@ class BoardUI(ttk.Frame):
         #ボタン機能を元に戻す
         self.board_restoration()
         return
+
     
     def indicate_Kyoen(self):
         '''
@@ -714,15 +715,18 @@ class BoardUI(ttk.Frame):
             return
 
         if are_these_Kyoen(self.stack):            
-            self.after_cancel(self.after_ID)
-            self.display_var.set('共円発生!')
-            self.score_var.set('%sの勝利!'%Ply[(len(self.prot_list)+1)%2])
+            if self.gamemode == 2:
+                self.sub_main_display_var.set('%sの勝利!'%Ply[(len(self.prot_list)+1)%2])
+            elif self.gamemode == 3:
+                self.after_cancel(self.after_ID)
+                self.sub_main_display_var.set('あなたの勝利!')
+            self.main_display_var.set('共円発生!')
             self.disp_Ng_list()
             self.make_Kyoen(self.stack)
             self.End_flag = True
         else:
-            self.display_var.set('共円ではない！')                       
-            self.indicate_cancel()
+            self.main_display_var.set('共円ではない！')                       
+            self.indicate_mode_cancel()
             return
         return
 
@@ -735,7 +739,7 @@ class BoardUI(ttk.Frame):
             self.position_list[pre_x][pre_y] = STONE
         self.position_list[x][y] = PRE_STONE
         self.pre = (x,y)
-        self.display_var.set('点を打ちたい場所をクリックしてください。')
+        self.main_display_var.set('点を打ちたい場所をクリックしてください。')
         return
 
 '''~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'''
